@@ -1,0 +1,14 @@
+{
+  "name": "christmas-todo-forest",
+  "productName": "크리스마스 할 일 숲",
+  "version": "0.1.0",
+  "private": true,
+  "description": "할 일을 끝내 눈덩이를 모으고 트리를 꾸미는 데스크톱 할 일 앱",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^45.4.1"
+  }
+}

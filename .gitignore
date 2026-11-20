@@ -1,0 +1,14 @@
+# 의존성 / 빌드 결과물
+node_modules/
+dist/
+out/
+
+# 예전 버전 백업 (로컬 보관용)
+index-v1-backup.html
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+*.log
