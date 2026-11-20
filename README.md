@@ -14,9 +14,25 @@
 ### 브라우저로 (설치 없이)
 `index.html` 을 더블클릭하면 돼요. 처음 열 때 인터넷이 필요해요 (three.js, 글꼴).
 
+### 다른 PC(집)에서 이어서 작업하기
+1. [Node.js](https://nodejs.org) 와 Git 설치 (Windows: `winget install OpenJS.NodeJS.LTS` / `winget install Git.Git`)
+2. 코드 받기
+   ```powershell
+   git clone https://github.com/maiteun/todo-snow.git
+   cd todo-snow
+   ```
+3. 한 번만 설치 (Electron 설치가 막히는 PC도 알아서 처리해요)
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\setup.ps1
+   ```
+4. 실행: `npm start`
+
+> `node_modules` 는 저장소에 없어요. 용량이 크고(Electron만 150MB+) GitHub 파일 크기 제한(100MB)에 걸려서, 3번에서 다시 만들어요.
+> 할 일·트리·레벨 같은 **내 데이터는 PC마다 따로** 저장돼요 (코드와 함께 옮겨지지 않아요).
+
 ### 데스크톱 앱으로 (Electron)
 ```bash
-npm install
+npm install   # 또는 setup.ps1
 npm start
 ```
 - 창을 닫아도 트레이에 남아 있어요
@@ -38,5 +54,7 @@ npm start
 | `wallpaper.html` | 배경화면 모드 버전 |
 | `main.js` | 데스크톱 앱: 창, 트레이, 단축키, Jira 웹 로그인 |
 | `preload.js` | 화면과 데스크톱 기능 연결 |
+| `setup.ps1` | 새 PC에서 한 번 실행하는 설치 스크립트 |
+| `index-v1-backup.html` | 예전 버전(오너먼트=할 일, 트리 성장, 눈사람 눈싸움) 백업 |
 
 데이터는 각자 브라우저/앱 안에만 저장돼요 (서버 없음).
