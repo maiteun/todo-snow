@@ -310,6 +310,7 @@ body.wall .tag:not(.me){display:none}
 
 <div class="hud top-right">
   <button class="iconbtn glass" id="soundBtn" title="소리 켜기/끄기">🔔</button>
+  <button class="iconbtn glass" id="dataBtn" title="내 데이터 백업 · 다른 PC로 옮기기">💾</button>
   <button class="iconbtn glass" id="listBtn" title="할 일 바구니 (L)">📋</button>
   <button class="iconbtn glass" id="fsBtn" title="전체화면">⛶</button>
 </div>
@@ -378,6 +379,21 @@ body.wall .tag:not(.me){display:none}
       <button class="btn cta" id="jLogin">로그인</button>
       <button class="btn cta" id="jSync">내 이슈 가져오기</button>
     </div>
+  </div>
+</div>
+
+<div class="modal" id="dataModal">
+  <div class="sheet glass" style="width:min(460px,calc(100% - 32px))">
+    <h3>💾 내 데이터 옮기기</h3>
+    <p class="sub">할 일, 칠한 트리, 레벨, 눈덩이, 별가루, 산 물건을 파일 하나로 저장해요.<br>다른 PC에서 <b>가져오기</b> 하면 그대로 이어서 할 수 있어요.</p>
+    <div class="jstatus" id="dataSummary"></div>
+    <p class="sub" style="margin:12px 0 0">Jira 로그인 상태는 옮겨지지 않아요. 새 PC에서 한 번 다시 로그인해 주세요.</p>
+    <div class="actions" style="flex-wrap:wrap">
+      <button class="btn" data-close style="margin-right:auto">닫기</button>
+      <button class="btn" id="dataImportBtn">📂 가져오기</button>
+      <button class="btn cta" id="dataExportBtn">💾 내보내기</button>
+    </div>
+    <input type="file" id="dataFile" accept=".json,application/json" hidden>
   </div>
 </div>
 
@@ -1503,7 +1519,7 @@ cv.addEventListener('pointerup', e => {
 });
 cv.addEventListener('pointercancel', () => { pull = null; player.userData.windup = 0; clearPreview(); });
 addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAdd(); closeImport(); $('jiraModal').classList.remove('open'); closeShop(); closeDetail(); $('drawer').classList.remove('open');
+  if (e.key === 'Escape') { closeAdd(); closeImport(); $('jiraModal').classList.remove('open'); $('dataModal').classList.remove('open'); closeShop(); closeDetail(); $('drawer').classList.remove('open');
     if (mode !== 'view') { placingId = null; setMode('view'); } return; }
   if (/input|textarea/i.test(document.activeElement?.tagName || '')) return;
   if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openAdd(); }
@@ -1522,6 +1538,52 @@ addEventListener('storage', e => {
     sync({ quiet:true });
   } catch {}
 });
+
+/* =========================================================
+   내 데이터 백업 / 다른 PC로 옮기기
+   ========================================================= */
+const DATA_APP = 'christmas-todo-forest';
+function collectData(){
+  const data = {};
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(STORE)) data[k] = localStorage.getItem(k); } } catch {}
+  data[STORE] = JSON.stringify(todos); data[GKEY] = JSON.stringify(G); // 저장 직전 상태까지
+  return data;
+}
+function openData(){
+  $('dataSummary').textContent = `할 일 ${todos.length}개 · Lv.${levelOf(G.done)} · ⚪ ${G.balls} · ✨ ${G.dust} · 🎨 ${Math.round(coverPct)}% · 건 오너먼트 ${G.placed.length}개 · 장식 ${G.decor.length}개`;
+  $('dataModal').classList.add('open');
+}
+function exportData(){
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  const payload = { app:DATA_APP, version:1, exportedAt:d.toISOString(), data:collectData() };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(payload)], { type:'application/json' }));
+  a.download = `todo-snow-backup-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  toast('💾 백업 파일을 만들었어요 · 다른 PC에서 가져오기 하세요');
+}
+function importData(file){
+  const r = new FileReader();
+  r.onload = () => {
+    let p; try { p = JSON.parse(r.result); } catch { return toast('⚠️ 백업 파일을 읽지 못했어요'); }
+    if (!p || p.app !== DATA_APP || !p.data || typeof p.data !== 'object') return toast('⚠️ 이 앱의 백업 파일이 아니에요');
+    let n = 0, g = {}; try { n = JSON.parse(p.data[STORE] || '[]').length; g = JSON.parse(p.data[GKEY] || '{}'); } catch {}
+    const when = p.exportedAt ? fmt(Date.parse(p.exportedAt)) : '';
+    if (!confirm(`백업으로 바꿀까요? (${when} 백업 · 할 일 ${n}개 · 눈덩이 ${g.balls ?? 0}개)\n\n지금 이 PC의 할 일과 트리는 백업 내용으로 덮어써져요.`)) return;
+    try {
+      Object.keys(localStorage).filter(k => k.startsWith(STORE)).forEach(k => localStorage.removeItem(k));
+      for (const [k, v] of Object.entries(p.data)) if (k.startsWith(STORE) && typeof v === 'string') localStorage.setItem(k, v);
+      ['seeded', 'cleared-1', 'reset-game-2'].forEach(f => localStorage.setItem(STORE + ':' + f, '1')); // 가져온 데이터를 다시 초기화하지 않게
+    } catch { return toast('⚠️ 이 화면에서는 데이터를 저장할 수 없어요'); }
+    location.reload();
+  };
+  r.readAsText(file);
+}
+$('dataBtn').onclick = openData;
+$('dataExportBtn').onclick = exportData;
+$('dataImportBtn').onclick = () => { $('dataFile').value = ''; $('dataFile').click(); };
+$('dataFile').onchange = () => { const f = $('dataFile').files[0]; if (f) importData(f); };
+$('dataModal').addEventListener('click', e => { if (e.target === $('dataModal') || e.target.hasAttribute('data-close')) $('dataModal').classList.remove('open'); });
 
 /* =========================================================
    Jira 연결 (데스크톱 앱에서만: 앱 안 웹 로그인)
