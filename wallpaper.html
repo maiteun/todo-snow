@@ -387,9 +387,10 @@ body.wall .tag:not(.me){display:none}
     <h3>💾 내 데이터 옮기기</h3>
     <p class="sub">할 일, 칠한 트리, 레벨, 눈덩이, 별가루, 산 물건을 파일 하나로 저장해요.<br>다른 PC에서 <b>가져오기</b> 하면 그대로 이어서 할 수 있어요.</p>
     <div class="jstatus" id="dataSummary"></div>
-    <p class="sub" style="margin:12px 0 0">Jira 로그인 상태는 옮겨지지 않아요. 새 PC에서 한 번 다시 로그인해 주세요.</p>
+    <p class="sub" style="margin:12px 0 0">Jira 로그인 상태는 옮겨지지 않아요. 새 PC에서 한 번 다시 로그인해 주세요.<br><span id="dataWhere"></span></p>
     <div class="actions" style="flex-wrap:wrap">
-      <button class="btn" data-close style="margin-right:auto">닫기</button>
+      <button class="btn danger" id="dataResetBtn" style="margin-right:auto">🧹 처음부터 다시</button>
+      <button class="btn" data-close>닫기</button>
       <button class="btn" id="dataImportBtn">📂 가져오기</button>
       <button class="btn cta" id="dataExportBtn">💾 내보내기</button>
     </div>
@@ -1579,6 +1580,15 @@ function importData(file){
   };
   r.readAsText(file);
 }
+function resetData(){
+  if (!confirm(`정말 처음부터 다시 할까요?\n\n지금 할 일 ${todos.length}개, 칠한 트리, 레벨, 눈덩이 ${G.balls}개, 별가루 ${G.dust}개, 산 물건이 모두 지워져요.\n먼저 💾 내보내기로 백업해 두면 나중에 되돌릴 수 있어요.`)) return;
+  try { [STORE, GKEY, STORE + ':jiraSyncedAt'].forEach(k => localStorage.removeItem(k)); } catch {}
+  location.reload(); // 소리·Jira 주소 설정과 Jira 로그인은 그대로 둬요
+}
+$('dataResetBtn').onclick = resetData;
+$('dataWhere').textContent = window.desktop
+  ? '저장 위치: 이 PC의 %APPDATA%\\크리스마스 할 일 숲 폴더 (앱 전용)'
+  : '저장 위치: 지금 쓰는 브라우저 안 (브라우저마다 따로)';
 $('dataBtn').onclick = openData;
 $('dataExportBtn').onclick = exportData;
 $('dataImportBtn').onclick = () => { $('dataFile').value = ''; $('dataFile').click(); };
