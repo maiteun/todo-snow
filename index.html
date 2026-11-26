@@ -22,6 +22,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1230;color:var(--te
 #app{position:fixed;inset:0}
 #app canvas{display:block;touch-action:none}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.28) transparent}
+.card *{scrollbar-color:rgba(0,0,0,.25) transparent}
 .glass{background:var(--glass);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);
   border:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,12,.35)}
 button.glass{transition:background .15s,transform .15s}
@@ -109,11 +111,17 @@ body.throwing .bottom .primary,body.throwing .emotes,body.placing .bottom .prima
 #labels{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}
 .tag{position:absolute;left:0;top:0;white-space:nowrap;padding:4px 11px;border-radius:999px;font-size:11px;
   background:rgba(18,24,48,.62);border:1px solid rgba(255,255,255,.2);color:#fff;will-change:transform}
-.tag.me{background:rgba(255,255,255,.93);color:#26304f;border-color:transparent}
-.tag.me b{background:#3b4a80;color:#fff;border-radius:6px;padding:0 5px;margin-right:5px;font-size:11px;font-weight:400}
+.tag.me{background:none;border:0;padding:0;margin-top:30px;color:#fff;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.5)}
+.tag.me b{background:none;color:#ffd36e;padding:0;margin-right:6px;font-size:12px;font-weight:400}
 .tag.balltag{background:rgba(255,255,255,.94);color:#26304f;border:0;border-radius:12px;padding:7px 11px;font-size:11px;line-height:1.5;
   white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.3);border-left:3px solid #ffc548}
 .tag.balltag .bt-h{font-family:'Jua';font-size:11px;color:#8a6a20;margin-bottom:1px}
+.tag.bubble{background:rgba(255,255,255,.66);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#1d2745;border:0;border-radius:14px;padding:6px 12px;font-size:12.5px;font-weight:600;line-height:1.35;white-space:normal;text-align:center;max-width:210px;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.tag.bubble::after{content:'';position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(255,255,255,.66);border-bottom:0}
+.mchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.mchips button{padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:inherit;font-size:12.5px}
+.mchips button:hover{background:rgba(255,255,255,.15)}
+.fsay{margin:10px 0 0;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.08);font-size:13px}
 .float{position:absolute;pointer-events:none;font-family:'Jua';font-size:19.5px;color:#fff;white-space:nowrap;
   text-shadow:0 2px 10px rgba(0,0,0,.45);animation:floatUp 1.7s ease-out forwards}
 .float.big{font-size:26.5px;color:#ffe9a0}
@@ -251,7 +259,7 @@ body.throwing .bottom .primary,body.throwing .emotes,body.placing .bottom .prima
 .subadd input{flex:1;border:0;background:transparent;outline:none;font-family:'Gowun Dodum',sans-serif;font-size:14.5px;color:var(--ink);padding:4px 0}
 .subadd input::placeholder{color:#b9aca6}
 .cnote{width:100%;min-height:96px;max-height:260px;resize:vertical;border:1px solid rgba(0,0,0,.09);border-radius:10px;background:#faf6ee;
-  color:var(--ink);font-family:'Gowun Dodum',sans-serif;font-size:14px;line-height:1.7;padding:10px 12px;outline:none;white-space:pre-wrap}
+  color:var(--ink);font-family:'Gowun Dodum',sans-serif;font-size:12.5px;line-height:1.65;padding:10px 12px;outline:none;white-space:pre-wrap}
 .cnote:focus{border-color:var(--accent);background:#fff}
 .cnote::placeholder{color:#b9aca6}
 .cmeta{color:#a89a94;margin:10px 0 4px;text-align:right;font-size:12px}
@@ -372,6 +380,7 @@ body.wall .tag:not(.me){display:none}
     <button data-emote="wave"><span>👋</span>인사</button>
     <button data-emote="heart"><span>💗</span>하트</button>
     <button data-emote="dance"><span>💃</span>춤추기</button>
+    <button data-emote="say"><span>💬</span>한마디</button>
     <button data-emote="list"><span>📋</span>할 일</button>
   </div>
 </div>
@@ -408,6 +417,16 @@ body.wall .tag:not(.me){display:none}
       <button class="btn" data-close>취소</button>
       <button class="btn cta" id="importConfirm">모두 담기</button>
     </div>
+  </div>
+</div>
+
+<div class="modal" id="msgModal">
+  <div class="sheet glass" style="width:min(400px,calc(100% - 32px))">
+    <h3>💬 머리 위 한마디</h3>
+    <p class="sub">내 눈사람 머리 위에 말풍선으로 떠 있어요. 친구 숲에 있는 동료에게도 보여요. 업무 내용은 적지 마세요.</p>
+    <input class="text" id="msgInput" maxlength="24" placeholder="예: 집중 중 🔥" autocomplete="off">
+    <div class="mchips" id="msgChips"></div>
+    <div class="actions"><button class="btn" id="msgClear" style="margin-right:auto">지우기</button><button class="btn" data-close>취소</button><button class="btn cta" id="msgSave">저장</button></div>
   </div>
 </div>
 
@@ -1079,15 +1098,9 @@ function floatText(world, text, cls = ''){ _v.copy(world).project(camera); if (_
 const PLAYER_HOME = new THREE.Vector3(3.4, 0, 7.4), THROW_SPOT = new THREE.Vector3(1.6, 0, 11.6);
 const player = makeSnowman({ scarf:0xd8433f, hatColor:0xd8433f });
 player.position.copy(PLAYER_HOME); player.rotation.y = .1; scene.add(player);
-const meLabel = addLabel(player, '<b>나</b>포근한 눈뭉치', 'me');
+const meLabel = addLabel(player, '<b>나</b>포근한 눈뭉치', 'me', .05); // 내 이름은 발밑에 글자만
 const cabinLabelsInit = (() => { cabinGroups.forEach(g => cabinLabels.push(addLabel(g, '', 'house', 4.3))); })();
-const npcs = [
-  { name:'다정한 눈사람', opt:{ scarf:0x3f7fe8, hatColor:0xf27fb2 }, a:1.2, sp:.09 },
-  { name:'느긋한 눈송이', opt:{ scarf:0x3fbf7f, hat:'tophat', hatColor:0xd8433f }, a:3.0, sp:-.06 },
-  { name:'반짝이는 솔방울', opt:{ scarf:0xf4b93a, hatColor:0x3f7fe8 }, a:4.4, sp:.075 },
-  { name:'졸린 눈토끼', opt:{ scarf:0xf27fb2, hatColor:0xffffff, brim:0xf27fb2 }, a:-.9, sp:-.05 },
-].map(n => { const s = makeSnowman(n.opt); s.scale.setScalar(.92); scene.add(s); addLabel(s, n.name, '');
-  return { ...n, fake:true, s, base:Math.abs(n.sp), R:8.7 + Math.random()*.6, pause:Math.random()*4, talk:4 + Math.random()*8 }; });
+const npcs = []; // 동료(친구 숲 멤버)의 눈사람이 여기에 들어와요
 const CHATTER = ['💗','❄️','🎄','✨','👋','메리 크리스마스!','코코아 마실 사람? ☕','오늘도 화이팅!','트리 예쁘다 🎨','눈 온다~','할 일 끝내고 눈싸움!'];
 function updateNpcs(dt, t){
   for (const n of npcs) {
@@ -1703,6 +1716,7 @@ function emote(kind){ const head = player.position.clone().add(new THREE.Vector3
   if (kind === 'wave') { playAnim(player, 'wave'); floatText(head, '👋 ' + hello()); }
   else if (kind === 'heart') { playAnim(player, 'hop'); for (let i = 0; i < 5; i++) later(i*.16, () => floatText(head.clone().add(new THREE.Vector3((Math.random()-.5)*1.4, Math.random()*.6, 0)), '💗')); chime([1760]); }
   else if (kind === 'dance') { playAnim(player, 'dance'); floatText(head, '🎵 ♪'); }
+  else if (kind === 'say') openMsg();
   else if (kind === 'list') $('drawer').classList.toggle('open'); }
 
 /* =========================================================
@@ -1755,7 +1769,7 @@ cv.addEventListener('pointerup', e => {
 });
 cv.addEventListener('pointercancel', () => { pull = null; player.userData.windup = 0; clearPreview(); });
 addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAdd(); closeImport(); $('jiraModal').classList.remove('open'); $('dataModal').classList.remove('open'); closeShop(); closeDetail(); $('forestModal').classList.remove('open'); $('friendModal').classList.remove('open'); $('drawer').classList.remove('open');
+  if (e.key === 'Escape') { closeAdd(); closeImport(); $('jiraModal').classList.remove('open'); $('dataModal').classList.remove('open'); closeShop(); closeDetail(); $('msgModal').classList.remove('open'); $('forestModal').classList.remove('open'); $('friendModal').classList.remove('open'); $('drawer').classList.remove('open');
     if (mode !== 'view') { placingId = null; setMode('view'); } return; }
   if (/input|textarea/i.test(document.activeElement?.tagName || '')) return;
   if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openAdd(); }
@@ -1906,6 +1920,10 @@ if (window.desktop?.onQuickAdd) {
     return { added, reason: added.length ? '' : ok ? '이미 바구니에 있는 링크예요' : '할 일로 만들 내용을 못 찾았어요' };
   });
   setupJira();
+  const newer = (a, b) => { const x = a.split('.').map(Number), y = b.split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
+  setTimeout(async () => { try { const cur = await window.desktop.version(), r = await fetch('https://api.github.com/repos/maiteun/todo-snow-download/releases/latest'); if (!r.ok) return;
+    const j = await r.json(), latest = String(j.tag_name || '').replace(/^v/, '');
+    if (latest && newer(latest, cur) && lsGet(STORE + ':updSeen') !== latest) { lsSet(STORE + ':updSeen', latest); toast('🎁 새 버전 ' + latest + ' 이 나왔어요', { label:'받으러 가기', fn:() => window.open(j.html_url) }); } } catch {} }, 6000);
   const hk = window.desktop.hotkey || 'Ctrl+Alt+T';
   document.querySelector('.drawer .dsub').textContent = `끝낼 때마다 ❄️ +1 · 링크 복사 후 ${hk} 로 어디서든 바로 담기`;
   document.querySelector('.linkhint').innerHTML = `💡 다른 창에서도 링크를 복사하고 <b>${hk}</b> 를 누르면 바로 담겨요`;
@@ -1947,7 +1965,7 @@ const FKEY = STORE + ':forest', SKEY = STORE + ':sb';
 const FCOLORS = ['#d8433f', '#3f7fe8', '#3fbf7f', '#f4b93a', '#f27fb2', '#8b5cf6', '#14b8a6', '#fb923c'];
 const FHATS = [0xd8433f, 0x3f7fe8, 0xf27fb2, 0xf4b93a, 0x3fbf7f, 0x8b5cf6];
 const jparse = (s, d) => { try { return JSON.parse(s) ?? d; } catch { return d; } };
-let F = jparse(lsGet(FKEY), null), sess = jparse(lsGet(SKEY), null), members = [], houseOwner = [], lastPushKey = '', lastPushAt = 0, tickBusy = false, pickColor = FCOLORS[0];
+let myMsg = lsGet(STORE + ':msg') || '', F = jparse(lsGet(FKEY), null), sess = jparse(lsGet(SKEY), null), members = [], houseOwner = [], lastPushKey = '', lastPushAt = 0, tickBusy = false, pickColor = FCOLORS[0];
 const saveF = () => lsSet(FKEY, F ? JSON.stringify(F) : '');
 const myUid = () => sess && sess.uid;
 const isOnline = m => m.user_id === myUid() || Date.now() - Date.parse(m.updated_at) < 150000;
@@ -1980,18 +1998,17 @@ function doorPos(rank){ const c = cabinSpots[rank], R = Math.hypot(c.x, c.z), f 
 function makeFolk(m){
   const hash = [...m.user_id].reduce((a, ch) => (a*31 + ch.charCodeAt(0)) >>> 0, 7);
   const s = makeSnowman({ scarf:parseInt(m.color.slice(1), 16) || 0xd8433f, hat:hash % 3 === 0 ? 'tophat' : 'beanie', hatColor:FHATS[hash % FHATS.length] });
-  s.scale.setScalar(.92); scene.add(s); const label = addLabel(s, '', '');
-  const n = { uid:m.user_id, friend:true, fake:false, s, label, a:Math.random()*6.28, sp:(Math.random() < .5 ? 1 : -1)*.07, base:.07, R:8 + Math.random()*1.6, pause:Math.random()*4, talk:6 + Math.random()*8, home:null };
+  s.scale.setScalar(.92); scene.add(s); const label = addLabel(s, '', ''), bubble = addLabel(s, '', 'bubble', 3.05);
+  const n = { uid:m.user_id, friend:true, fake:false, s, label, bubble, a:Math.random()*6.28, sp:(Math.random() < .5 ? 1 : -1)*.07, base:.07, R:8 + Math.random()*1.6, pause:Math.random()*4, talk:6 + Math.random()*8, home:null };
   s.position.set(Math.sin(n.a)*n.R, 0, Math.cos(n.a)*n.R); npcs.push(n); return n;
 }
 function syncFolks(){
   const others = members.filter(m => m.user_id !== myUid());
   for (let i = npcs.length - 1; i >= 0; i--) { const n = npcs[i];
-    if (n.friend && !others.some(m => m.user_id === n.uid)) { labels.delete(n.label); n.label.el.remove(); scene.remove(n.s); npcs.splice(i, 1); } }
+    if (n.friend && !others.some(m => m.user_id === n.uid)) { labels.delete(n.label); n.label.el.remove(); labels.delete(n.bubble); n.bubble.el.remove(); scene.remove(n.s); npcs.splice(i, 1); } }
   for (const m of others) { const n = npcs.find(x => x.uid === m.user_id) || makeFolk(m), rank = members.indexOf(m), on = isOnline(m);
     n.m = m; n.home = on || rank >= cabinSpots.length ? null : doorPos(rank);
-    setTag(n.label.el, m.nickname, (on ? '' : '💤 ') + 'Lv.' + m.level); }
-  npcs.filter(n => n.fake).forEach((n, i) => { n.s.visible = i < Math.max(0, 4 - others.length); }); // 친구가 들어오면 가짜 눈사람은 자리를 비켜요
+    setTag(n.label.el, m.nickname, (on ? '' : '💤 ') + 'Lv.' + m.level); setBubble(n.bubble.el, m.tree && m.tree.msg); }
   houseOwner = []; members.forEach((m, rank) => { if (rank < cabinGroups.length) houseOwner[rank] = m; });
   applyHouses(); setTag(meLabel.el, '나', F ? F.nick : '포근한 눈뭉치');
 }
@@ -2005,7 +2022,7 @@ function applyHouses(){
 /* ---- 내 상태 올리기 / 친구 상태·인사 받기 ---- */
 async function forestPush(force){
   if (!F) return;
-  const st = { nickname:F.nick, color:F.color, level:levelOf(G.done), done_count:G.done, coverage:Math.round(coverPct*10)/10, balls:G.balls }, key = JSON.stringify(st);
+  const st = { nickname:F.nick, color:F.color, level:levelOf(G.done), done_count:G.done, coverage:Math.round(coverPct*10)/10, balls:G.balls, tree:{ msg:myMsg } }, key = JSON.stringify(st);
   if (!force && key === lastPushKey && Date.now() - lastPushAt < 60000) return;
   await sb('PATCH', '/rest/v1/members?forest_id=eq.' + F.forestId + '&user_id=eq.' + myUid(), { ...st, updated_at:new Date().toISOString() });
   lastPushKey = key; lastPushAt = Date.now();
@@ -2013,7 +2030,7 @@ async function forestPush(force){
   if (F.lastLevel !== st.level) { F.lastLevel = st.level; saveF(); }
 }
 async function forestPoll(){
-  const rows = await sb('GET', '/rest/v1/members?forest_id=eq.' + F.forestId + '&select=user_id,nickname,color,level,done_count,coverage,balls,joined_at,updated_at&order=joined_at.asc');
+  const rows = await sb('GET', '/rest/v1/members?forest_id=eq.' + F.forestId + '&select=user_id,nickname,color,level,done_count,coverage,balls,tree,joined_at,updated_at&order=joined_at.asc');
   if (!rows.some(m => m.user_id === myUid())) { F = null; saveF(); members = []; syncFolks(); renderForest(); toast('🌲 숲에서 나가졌어요. 다시 초대 코드로 들어와 주세요'); return; }
   members = rows; syncFolks(); if ($('forestModal').classList.contains('open')) renderForest();
   if (F.lastEvt == null) { const last = await sb('GET', '/rest/v1/events?forest_id=eq.' + F.forestId + '&select=id&order=id.desc&limit=1'); F.lastEvt = last[0] ? last[0].id : 0; saveF(); return; }
@@ -2086,7 +2103,9 @@ function renderForest(){
   box.append(ul);
   const lv = h('button', 'btn danger', '숲 나가기'); lv.onclick = forestLeave; box.append(h('div', 'fleave', lv));
 }
-function openForest(){ renderForest(); $('forestModal').classList.add('open'); if (F) forestTick(); }
+function openForest(){ renderForest(); $('forestModal').classList.add('open');
+  if (F) { forestTick(); // 숲 이름이나 초대 코드가 서버에서 바뀌었으면 따라가요
+    sb('POST', '/rest/v1/rpc/forest_info', { p_forest:F.forestId }).then(r => { if (F && r && r[0] && (r[0].code !== F.code || r[0].name !== F.name)) { F.code = r[0].code; F.name = r[0].name; saveF(); renderForest(); } }).catch(() => {}); } }
 $('forestBtn').onclick = openForest;
 $('forestModal').addEventListener('click', e => { if (e.target === $('forestModal') || e.target.hasAttribute('data-close')) $('forestModal').classList.remove('open'); });
 
@@ -2096,6 +2115,7 @@ function openFriend(uid){
   const me = uid === myUid(), on = isOnline(m), box = $('friendBody'); box.innerHTML = '';
   const top = h('div', 'ftop'); const dot = h('i', 'fdot big' + (on ? ' on' : '')); dot.style.setProperty('--c', m.color);
   top.append(dot, h('div', '', h('h3', '', m.nickname + (me ? ' (나)' : '')), h('small', 'fstate', on ? '🟢 지금 숲에 있어요' : '💤 자리를 비웠어요'))); box.append(top);
+  if (m.tree && m.tree.msg) box.append(h('div', 'fsay', '💬 ' + m.tree.msg));
   const g = h('div', 'fstats');
   [['⭐', 'Lv.' + m.level, '레벨'], ['✅', m.done_count + '개', '끝낸 할 일'], ['🎨', Math.round(m.coverage) + '%', '눈 덮임'], ['⚪', m.balls + '개', '눈덩이']].forEach(([i, v, l]) => g.append(h('div', 'fstat', h('span', '', i), h('b', '', v), h('small', '', l))));
   box.append(g);
@@ -2112,6 +2132,18 @@ async function sendFolk(m, kind){
   } catch (e) { toast('🌲 ' + errText(e)); }
 }
 $('friendModal').addEventListener('click', e => { if (e.target === $('friendModal') || e.target.hasAttribute('data-close')) $('friendModal').classList.remove('open'); });
+/* ---- 머리 위 한마디 ---- */
+const MSG_PRESETS = ['집중 중 🔥', '회의 중 📅', '점심 먹는 중 🍚', '잠깐 자리 비움 ☕', '퇴근 준비 🏠', '메리 크리스마스 🎄'];
+const meBubble = addLabel(player, '', 'bubble', 3.05);
+function setBubble(el, t){ el.textContent = t || ''; }
+setBubble(meBubble.el, myMsg);
+function openMsg(){ $('msgInput').value = myMsg; $('msgModal').classList.add('open'); setTimeout(() => $('msgInput').focus(), 60); }
+function saveMsg(txt){ myMsg = String(txt || '').trim().slice(0, 24); lsSet(STORE + ':msg', myMsg); setBubble(meBubble.el, myMsg); $('msgModal').classList.remove('open');
+  if (F) forestPush(true).catch(() => {}); toast(myMsg ? '💬 머리 위에 띄웠어요' : '💬 한마디를 지웠어요'); }
+$('msgChips').append(...MSG_PRESETS.map(t => { const b = h('button', '', t); b.onclick = () => saveMsg(t); return b; }));
+$('msgSave').onclick = () => saveMsg($('msgInput').value); $('msgClear').onclick = () => saveMsg('');
+$('msgInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) saveMsg($('msgInput').value); });
+$('msgModal').addEventListener('click', e => { if (e.target === $('msgModal') || e.target.hasAttribute('data-close')) $('msgModal').classList.remove('open'); });
 if (F) { pickColor = F.color || pickColor; setTimeout(forestTick, 1500); } else syncFolks();
 
 /* =========================================================

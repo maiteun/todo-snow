@@ -158,6 +158,7 @@ function adfToText(n) { // Jira 설명(ADF 형식) → 일반 글
   };
   return walk(n).replace(/\n{3,}/g, '\n\n').trim();
 }
+ipcMain.handle('app:version', () => app.getVersion());
 ipcMain.handle('jira:status', async () => {
   const { site } = loadCfg(); if (!site) return { connected: false };
   try { const me = await jiraFetch(site, '/rest/api/3/myself'); return { connected: true, site, user: me.displayName }; }
