@@ -1,0 +1,31 @@
+# 윈도우용 설치 파일(.exe)과 맥용(.dmg)을 GitHub에서 자동으로 만들어요
+# 쓰는 법: GitHub 저장소 → Actions → "설치 파일 만들기" → Run workflow → 끝나면 Artifacts 에서 내려받기
+name: 설치 파일 만들기
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            script: dist:win
+          - os: macos-latest
+            script: dist:mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-fund --no-audit
+      - run: npm run icon
+      - run: npm run ${{ matrix.script }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-snow-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg

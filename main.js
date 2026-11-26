@@ -80,7 +80,8 @@ function createWindow() {
     if (!toldTray) { toldTray = true; notify('트레이에서 계속 실행 중이에요 🎄', `복사한 링크는 ${hotkeyLabel()} 로 바로 담을 수 있어요. 완전히 끄려면 트레이 아이콘 → 종료`); }
   });
 }
-const hotkeyLabel = () => HOTKEY.replace('CommandOrControl', 'Ctrl');
+const IS_MAC = process.platform === 'darwin';
+const hotkeyLabel = () => IS_MAC ? '⌘+Option+T' : HOTKEY.replace('CommandOrControl', 'Ctrl');
 function loginItemOpts(open) {
   // 개발 중(npm start)에는 이 폴더를 인자로 넘겨야 앱이 제대로 켜져요
   return app.isPackaged ? { openAtLogin: open } : { openAtLogin: open, path: process.execPath, args: [path.resolve(__dirname)] };
@@ -91,7 +92,7 @@ function buildTrayMenu() {
     { label: '🎄 열기', click: showWin },
     { label: `📋 복사한 내용 바구니에 담기  (${hotkeyLabel()})`, click: quickAdd },
     { type: 'separator' },
-    { label: 'Windows 시작할 때 실행', type: 'checkbox', checked: auto, click: (item) => { app.setLoginItemSettings(loginItemOpts(item.checked)); } },
+    { label: IS_MAC ? '로그인할 때 실행' : 'Windows 시작할 때 실행', type: 'checkbox', checked: auto, click: (item) => { app.setLoginItemSettings(loginItemOpts(item.checked)); } },
     { type: 'separator' },
     { label: '종료', click: () => { quitting = true; app.quit(); } },
   ]));
@@ -210,6 +211,7 @@ if (!app.requestSingleInstanceLock()) {
     createTray();
     if (!globalShortcut.register(HOTKEY, quickAdd)) notify('단축키를 쓸 수 없어요', `${hotkeyLabel()} 를 다른 프로그램이 쓰고 있어요. 트레이 메뉴에서 담기를 눌러주세요`);
   });
+  app.on('activate', showWin); // 맥: 독 아이콘을 누르면 창을 다시 열어요
   app.on('before-quit', () => { quitting = true; });
   app.on('will-quit', () => globalShortcut.unregisterAll());
   app.on('window-all-closed', (e) => e.preventDefault()); // 트레이에 남기

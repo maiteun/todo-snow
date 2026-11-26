@@ -4,11 +4,26 @@
   "version": "0.1.0",
   "private": true,
   "description": "할 일을 끝내 눈덩이를 모으고 트리를 꾸미는 데스크톱 할 일 앱",
+  "author": "maiteun",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "icon": "node scripts/make-icon.js",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.christmas.todoforest",
+    "productName": "크리스마스 할 일 숲",
+    "files": ["index.html", "wallpaper.html", "main.js", "preload.js", "package.json"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build/icon.png" },
+    "nsis": { "oneClick": true, "perMachine": false, "shortcutName": "크리스마스 할 일 숲", "artifactName": "todo-snow-setup-${version}.${ext}" },
+    "mac": { "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }], "category": "public.app-category.productivity", "icon": "build/icon.png", "identity": null,
+      "artifactName": "todo-snow-${version}-${arch}.${ext}" }
   },
   "devDependencies": {
-    "electron": "^45.4.1"
+    "electron": "^45.4.1",
+    "electron-builder": "^26.0.0"
   }
 }

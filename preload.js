@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('desktop', {
   isDesktop: true,
-  hotkey: 'Ctrl+Alt+T',
+  hotkey: process.platform === 'darwin' ? '⌘+Option+T' : 'Ctrl+Alt+T',
   // 단축키로 클립보드 내용이 들어오면 화면 쪽에서 할 일로 담고, 결과를 돌려줘요
   onQuickAdd: (handler) => {
     ipcRenderer.on('quick-add', (_e, text) => {
