@@ -71,6 +71,19 @@ button.glass:active{transform:scale(.96)}
 .fstat{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.07);display:grid;gap:1px}
 .fstat span{font-size:15px}.fstat b{font:400 18px 'Jua'}.fstat small{color:var(--muted);font-size:11px}
 .frow2{display:flex;gap:8px;margin-top:6px}.frow2 .btn{flex:1}
+#coach{position:fixed;inset:0;z-index:45;backdrop-filter:blur(7px) brightness(.7);-webkit-backdrop-filter:blur(7px) brightness(.7);background:rgba(5,8,22,.35);opacity:0;pointer-events:none;transition:opacity .35s}
+#coach.show{opacity:1;pointer-events:auto}
+#coachRing{position:fixed;z-index:46;border-radius:50%;border:2.5px solid var(--gold);opacity:0;pointer-events:none;transition:opacity .35s;box-shadow:0 0 22px rgba(255,211,110,.6)}
+#coachRing::after{content:'';position:absolute;inset:-2.5px;border-radius:50%;border:2px solid var(--gold);animation:cring 1.7s ease-out infinite}
+@keyframes cring{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.8);opacity:0}}
+#coachCard{position:fixed;z-index:47;width:min(340px,calc(100% - 32px));padding:20px 20px 14px;border-radius:22px;background:var(--glass-strong);opacity:0;pointer-events:none;transform:translateY(-8px);transition:opacity .35s,transform .35s;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+#coachCard.show{opacity:1;pointer-events:auto;transform:none}
+#coachCard .arrow{position:absolute;top:-8px;width:16px;height:16px;background:var(--glass-strong);transform:rotate(45deg);border-radius:3px;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+#coachCard h3{font:400 18px 'Jua';margin:0 0 4px}
+#coachCard .sub{font-size:12.5px;margin:0 0 12px}
+#coachCard .text{margin-top:8px;padding:11px 14px;font-size:13.5px}
+#coachCard .btn{width:100%;margin-top:12px}
+#coachCard .skip{display:block;width:100%;margin-top:6px;padding:8px;background:none;border:0;color:var(--muted);font-size:12px}
 #splitModal .sheet{width:min(520px,calc(100% - 32px))}
 .splitlist{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:14px;padding:6px;background:rgba(255,255,255,.04)}
 .splitlist label{display:flex;gap:9px;align-items:flex-start;padding:7px 8px;border-radius:9px;font-size:13px;line-height:1.45;cursor:pointer}
@@ -418,6 +431,16 @@ body.wall .tag:not(.me){display:none}
       <button class="btn cta" id="importConfirm">모두 담기</button>
     </div>
   </div>
+</div>
+
+<div id="coach"></div><div id="coachRing"></div>
+<div id="coachCard" class="glass"><span class="arrow" id="coachArrow"></span>
+  <h3>🌲 초대 코드가 있나요?</h3>
+  <p class="sub">동료가 보내준 코드를 넣으면 같은 숲에 들어가요. 서로의 눈사람과 집이 광장에 나타나요. <b>위쪽 🌲 버튼</b>에서 언제든 다시 할 수 있어요.</p>
+  <input class="text" id="cNickIn" maxlength="20" placeholder="내 이름표 (동료들에게 보이는 이름)" autocomplete="off">
+  <input class="text" id="cCodeIn" placeholder="초대 코드  SNOW-XXXXX" autocomplete="off">
+  <button class="btn cta" id="cGo">들어가기</button>
+  <button class="skip" id="cSkip">코드가 아직 없어요 · 나중에 할게요</button>
 </div>
 
 <div class="modal" id="msgModal">
@@ -1949,8 +1972,9 @@ function renderTour(){
 }
 function startTour(){ tourI = 0; renderTour(); $('tourModal').classList.add('open'); }
 function endTour(){ $('tourModal').classList.remove('open'); lsSet(STORE + ':onboarded', '1');
-  if (hasDesk && !jiraState.connected && !lsGet(STORE + ':jiraHinted')) { lsSet(STORE + ':jiraHinted', '1');
-    later(1.5, () => toast('🎫 회사 Jira를 연결하면 내 이슈가 자동으로 담겨요', { label:'연결하기', fn:() => { openJira(); if (!$('jSite').value) $('jSite').value = JIRA_DEFAULT_SITE; } })); } }
+  const jiraHint = () => { if (hasDesk && !jiraState.connected && !lsGet(STORE + ':jiraHinted')) { lsSet(STORE + ':jiraHinted', '1');
+    later(1.2, () => toast('🎫 회사 Jira를 연결하면 내 이슈가 자동으로 담겨요', { label:'연결하기', fn:() => { openJira(); if (!$('jSite').value) $('jSite').value = JIRA_DEFAULT_SITE; } })); } };
+  if (!F && !WALL && !lsGet(STORE + ':joinHinted')) { lsSet(STORE + ':joinHinted', '1'); later(.5, () => showCoach(jiraHint)); } else jiraHint(); }
 $('tourNext').onclick = () => { if (tourI < TOUR.length - 1) { tourI++; renderTour(); } else endTour(); };
 $('tourSkip').onclick = endTour;
 $('helpBtn').onclick = startTour;
@@ -2058,13 +2082,41 @@ async function forestCreate(){
     F = { forestId:r[0].forest_id, code:r[0].code, name:($('fName').value.trim() || '우리 숲'), nick, color:pickColor, lastEvt:null, lastLevel:null }; saveF(); await afterJoin(); toast('🌲 숲을 만들었어요! 초대 코드를 동료에게 보내 주세요'); chime([1046.5, 1318.5, 1568]);
   } catch (e) { toast('🌲 ' + errText(e)); $('fMake').disabled = false; }
 }
+async function doJoin(nick, code, btn){
+  lsSet(STORE + ':nick', nick); btn.disabled = true;
+  try { const r = await sb('POST', '/rest/v1/rpc/join_forest', { p_code:code, p_nickname:nick, p_color:pickColor });
+    F = { forestId:r[0].forest_id, code, name:r[0].name, nick, color:pickColor, lastEvt:null, lastLevel:null }; saveF(); await afterJoin(); toast('🌲 ' + F.name + ' 에 들어왔어요!'); chime([1046.5, 1318.5, 1568]); return true;
+  } catch (e) { toast('🌲 ' + errText(e)); btn.disabled = false; return false; }
+}
 async function forestJoin(){
   const nick = nickVal(); if (!nick) return; const code = $('fCode').value.trim().toUpperCase(); if (!code) { shakeEl($('fCode')); return; }
-  lsSet(STORE + ':nick', nick); $('fJoin').disabled = true;
-  try { const r = await sb('POST', '/rest/v1/rpc/join_forest', { p_code:code, p_nickname:nick, p_color:pickColor });
-    F = { forestId:r[0].forest_id, code, name:r[0].name, nick, color:pickColor, lastEvt:null, lastLevel:null }; saveF(); await afterJoin(); toast('🌲 ' + F.name + ' 에 들어왔어요!'); chime([1046.5, 1318.5, 1568]);
-  } catch (e) { toast('🌲 ' + errText(e)); $('fJoin').disabled = false; }
+  await doJoin(nick, code, $('fJoin'));
 }
+/* ---- 처음 켰을 때: 화면을 흐리게 하고 🌲 버튼을 가리키며 초대 코드를 받아요 ---- */
+let coachAfter = null;
+function positionCoach(){
+  const b = $('forestBtn').getBoundingClientRect(), cx = b.left + b.width/2, cy = b.top + b.height/2, r = Math.max(b.width, b.height)/2 + 8, W = innerWidth, H = innerHeight;
+  $('coach').style.clipPath = 'path(evenodd,"M0 0H' + W + 'V' + H + 'H0Z M' + (cx - r) + ' ' + cy + 'a' + r + ' ' + r + ' 0 1 0 ' + (2*r) + ' 0a' + r + ' ' + r + ' 0 1 0 ' + (-2*r) + ' 0Z")';
+  const ring = $('coachRing'); ring.style.cssText = 'left:' + (cx - r) + 'px;top:' + (cy - r) + 'px;width:' + (2*r) + 'px;height:' + (2*r) + 'px';
+  const card = $('coachCard'), cw = Math.min(340, W - 32); card.style.top = (b.bottom + 22) + 'px'; card.style.right = '16px';
+  $('coachArrow').style.left = Math.max(18, Math.min(cw - 34, cx - (W - 16 - cw) - 8)) + 'px';
+}
+function showCoach(after){
+  coachAfter = after || null; pickColor = FCOLORS[Math.floor(Math.random()*FCOLORS.length)];
+  $('cNickIn').value = lsGet(STORE + ':nick') || String((jiraState && jiraState.user) || '').split('/')[0].trim(); $('cCodeIn').value = '';
+  positionCoach(); $('coach').classList.add('show'); $('coachRing').style.opacity = 1; $('coachCard').classList.add('show');
+  setTimeout(() => $('cCodeIn').focus(), 450);
+}
+function closeCoach(){ $('coach').classList.remove('show'); $('coachRing').style.opacity = 0; $('coachCard').classList.remove('show'); const f = coachAfter; coachAfter = null; if (f) f(); }
+async function coachGo(){
+  const nick = $('cNickIn').value.trim().slice(0, 20), code = $('cCodeIn').value.trim().toUpperCase();
+  if (!nick) { shakeEl($('cNickIn')); return; } if (!code) { shakeEl($('cCodeIn')); return; }
+  if (await doJoin(nick, code, $('cGo'))) closeCoach();
+}
+$('cGo').onclick = coachGo; $('cSkip').onclick = closeCoach;
+$('cCodeIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) coachGo(); });
+$('cNickIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) $('cCodeIn').focus(); });
+addEventListener('resize', () => { if ($('coach').classList.contains('show')) positionCoach(); });
 async function forestLeave(){
   if (!confirm('이 숲에서 나갈까요?\n내 눈사람과 집이 친구들 화면에서 사라져요. 초대 코드로 다시 들어올 수 있어요.')) return;
   try { await sb('DELETE', '/rest/v1/members?forest_id=eq.' + F.forestId + '&user_id=eq.' + myUid()); } catch (e) { toast('🌲 ' + errText(e)); return; }
