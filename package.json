@@ -1,7 +1,7 @@
 {
   "name": "christmas-todo-forest",
   "productName": "크리스마스 할 일 숲",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "할 일을 끝내 눈덩이를 모으고 트리를 꾸미는 데스크톱 할 일 앱",
   "author": "maiteun",
@@ -15,12 +15,49 @@
   "build": {
     "appId": "com.christmas.todoforest",
     "productName": "크리스마스 할 일 숲",
-    "files": ["index.html", "wallpaper.html", "main.js", "preload.js", "package.json"],
-    "directories": { "output": "dist", "buildResources": "build" },
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build/icon.png" },
-    "nsis": { "oneClick": true, "perMachine": false, "shortcutName": "크리스마스 할 일 숲", "artifactName": "todo-snow-setup-${version}.${ext}" },
-    "mac": { "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }], "category": "public.app-category.productivity", "icon": "build/icon.png", "identity": null,
-      "artifactName": "todo-snow-${version}-${arch}.${ext}" }
+    "files": [
+      "index.html",
+      "wallpaper.html",
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "크리스마스 할 일 숲",
+      "artifactName": "todo-snow-setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
+      "identity": null,
+      "artifactName": "todo-snow-${version}-${arch}.${ext}"
+    }
   },
   "devDependencies": {
     "electron": "^45.4.1",
